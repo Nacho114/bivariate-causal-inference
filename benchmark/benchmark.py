@@ -1,28 +1,47 @@
-import tueb_data as data
+import dataset
 
 import sys
 sys.path.append("../twintest")
 
 import causality
 
+def run_benchmark(data, print_progress=True):
+    W = data.get_total_weight()
+    acc = 0
+
+    for idx, (x, y, target, w) in enumerate(data):
+
+        pred = causality.estimate_effect(x, y)
+        if print_progress:
+            print('Running: {}. pred: {}, actual {}'.format(idx, int(pred), target))
+
+        acc += int(pred == target) * w
+
+        if idx > 2:
+            break
+
+    perf = acc / W
+
+    if print_progress:
+        print('\nacc: {:.3f}'.format(perf))
+
+    return perf
+
 
 if __name__ == '__main__':
 
-    meta_data = data.get_metadata()
-    W = data.get_total_weight(meta_data)
-    acc = 0
+    db_names = ['CE-Tueb', 'CE-Gauss', 'CE-Cha', 'CE-Multi', 'CE-Net']
 
-    for idx, data_info in enumerate(meta_data):
-        x, y = data.load_sample(data_info)
-        w = data_info['weight']
+    acc_list = []
 
-        pred = causality.estimate_effect(x, y)
-        print('Running: {}. pred: {}, actual {}'.format(idx, int(pred), data_info['causality']))
+    for name in db_names:
+        data = dataset.load_dataset(name)
+        print('Running ', name)
+        acc = run_benchmark(data, print_progress=True)
+        acc_list.append(acc)
+        print('Done.\n')
 
-        acc += int(pred == data_info['causality']) * w
-
-    print('\nacc:', acc / W)
-
-
-
+    print('Accuracies:\n')
+    for name, acc in zip(db_names, acc_list):
+        print(name + ' acc: {:.3f}'.format(acc))
 

@@ -91,4 +91,3 @@ def print_statistics():
     print('Minimum nb samples: {}\nMean nb samples: {} \nMax nb samples: {}'.format(min(lens), int(np.mean(lens)), max(lens)))
     print('\nnb bivariate datasets:', ctr)
     print('Total nb of datasets:', len(meta_data))
-
