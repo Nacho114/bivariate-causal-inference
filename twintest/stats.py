@@ -9,7 +9,6 @@ import statsmodels.api as sm
 
 def to_density(x, bins=5, bounds=None):
     """"Turn into density based nb of bins"""
-
     p_x = np.histogram(x, bins=bins, density=True, range=bounds)[0]
     p_x = p_x / np.sum(p_x)
     return p_x  
@@ -22,6 +21,13 @@ def get_pairs(val):
             pairs.append([i, j])
 
     return pairs
+
+def normalize(v):
+    v = v - np.mean(v)
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
 
 
 ###################################
@@ -77,11 +83,13 @@ def model_selection(x, y, max_degree=6):
     
     return opt_model
 
-def compute_residuals(X_, Y_, models):
+def compute_residuals(X_, Y_, models, norm=False):
     residuals = []
 
     for i in range(len(X_)):
         r = Y_[i] - models[i].predict(X_[i])
+        if norm:
+            r = normalize(r)
         residuals.append(r)
 
     return residuals

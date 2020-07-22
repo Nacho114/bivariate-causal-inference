@@ -4,7 +4,7 @@ import math
 import sys
 
 import stats
-
+import metrics
 
 ###################################
 # Partition data based on kmeans
@@ -121,7 +121,7 @@ def find_residual_bounds(residuals):
     return min(min_res_vals), max(max_res_vals)
 
 
-def find_max_discrp(residuals, bins=None):
+def find_max_discrp(residuals, bins=None, metric_name='l1'):
 
     if bins is None:
         bins = determine_bin_size(residuals)
@@ -135,35 +135,34 @@ def find_max_discrp(residuals, bins=None):
     # bounds = min(residuals), max(residuals)
     bounds = find_residual_bounds(residuals)
 
-    for i, j in pairs:
-        delta = stats.to_density(residuals[i], bins, bounds=bounds) - stats.to_density(residuals[j], bins, bounds=bounds)
-        score = np.linalg.norm(delta, ord=1)
+    for pair in pairs:
+        score = metrics.get_score(residuals, pair, bins, bounds, metric_name)
         if score > max_score:
             max_score = score
-            best_pair = i, j
+            best_pair = pair
 
     return max_score, best_pair
 
-def find_res_distrib_var(residuals, bins=None):
+# def find_res_distrib_var(residuals, bins=None):
 
-    if bins is None:
-        bins = determine_bin_size(residuals)
+#     if bins is None:
+#         bins = determine_bin_size(residuals)
 
-    # find the range for the density discretisationg
-    # bounds = min(residuals), max(residuals)
-    bounds = find_residual_bounds(residuals)
+#     # find the range for the density discretisationg
+#     # bounds = min(residuals), max(residuals)
+#     bounds = find_residual_bounds(residuals)
 
-    nb_res = len(residuals)
+#     nb_res = len(residuals)
 
-    mean_residual_density = sum([stats.to_density(r, bins, bounds=bounds) for r in residuals]) / nb_res
+#     mean_residual_density = sum([stats.to_density(r, bins, bounds=bounds) for r in residuals]) / nb_res
 
-    total_diff = 0
-    for r in residuals:
-        delta = stats.to_density(r, bins, bounds=bounds) - mean_residual_density
-        total_diff += np.linalg.norm(delta, ord=1)
-     
-
-    return total_diff / nb_res, None
+#     total_diff = 0
+#     for r in residuals:
+#         delta = stats.to_density(r, bins, bounds=bounds) - mean_residual_density
+#         total_diff += np.linalg.norm(delta, ord=1)
+    #  
+# 
+    # return total_diff / nb_res, None
 
 ###################################
 # Main functions
@@ -185,15 +184,21 @@ def estimate_partitioned_models(x, y, n_clusters=None):
     return residuals, X_, Y_, models
 
 
-def estimate_effect(x, y, n_clusters=None, bins=None):
+def estimate_effect(x, y, n_clusters=None, bins=None, min_cluster_rule=False, metric_name='l1'):
     """Estimates the causal effect: Returns 1 if X -> Y and 0 if Y -> X"""
+
+    if min_cluster_rule:
+        size_x = determine_partition_size(x)
+        size_y = determine_partition_size(y)
+        n_clusters = max(size_x, size_y)
+
     # We fit x->y
     residuals, _, _, _ = estimate_partitioned_models(x, y, n_clusters)
-    score, _ = find_max_discrp(residuals, bins)
+    score, _ = find_max_discrp(residuals, bins, metric_name)
 
     # We fit y->x
     residualsr, _, _, _ = estimate_partitioned_models(y, x, n_clusters)
-    scorer, _ = find_max_discrp(residualsr, bins)
+    scorer, _ = find_max_discrp(residualsr, bins, metric_name)
 
     return score < scorer
 

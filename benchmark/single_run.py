@@ -10,9 +10,9 @@ if __name__ == '__main__':
 
     # 'CE-Tueb', 'CE-Gauss', 'CE-Cha', 'CE-Multi', 'CE-Net'
     
-    data = dataset.load_dataset('CE-Tueb')
+    data = dataset.load_dataset('CE-Multi')
 
-    idx = 0
+    idx = 66
     x, y, target, w = data[idx]
 
     print(len(data))

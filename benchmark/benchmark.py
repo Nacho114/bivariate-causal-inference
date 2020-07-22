@@ -5,20 +5,17 @@ sys.path.append("../twintest")
 
 import causality
 
-def run_benchmark(data, print_progress=True):
+def run_benchmark(data, print_progress=True, metric_name='l1'):
     W = data.get_total_weight()
     acc = 0
 
     for idx, (x, y, target, w) in enumerate(data):
 
-        pred = causality.estimate_effect(x, y)
+        pred = causality.estimate_effect(x, y, metric_name=metric_name)
         if print_progress:
             print('Running: {}. pred: {}, actual {}'.format(idx, int(pred), target))
 
         acc += int(pred == target) * w
-
-        if idx > 2:
-            break
 
     perf = acc / W
 
@@ -34,10 +31,12 @@ if __name__ == '__main__':
 
     acc_list = []
 
+    metric_name = 'mmd_median_heuristic'
+
     for name in db_names:
         data = dataset.load_dataset(name)
         print('Running ', name)
-        acc = run_benchmark(data, print_progress=True)
+        acc = run_benchmark(data, print_progress=True, metric_name=metric_name)
         acc_list.append(acc)
         print('Done.\n')
 
