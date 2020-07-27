@@ -71,13 +71,14 @@ def partition_data(x, y, n_clusters=None, sorted_labels=True):
 
 
 # fit data
-def fit_partitions(X_, Y_):
+def fit_partitions(X_, Y_, model_params):
 
     models = []
 
     for x, y in zip(X_, Y_):
         # Fit model
-        model = stats.model_selection(x, y)
+        # model = stats.model_selection(x, y)
+        model = stats.get_model(x, y, model_params)
 
         models.append(model)
 
@@ -94,7 +95,6 @@ def stugers(n):
     k = 3
     
     if n < 500:
-        
         k = 1 + np.log(n)
         
     elif n < 1000:
@@ -168,7 +168,7 @@ def find_max_discrp(residuals, bins=None, metric_name='l1'):
 # Main functions
 ###################################
 
-def estimate_partitioned_models(x, y, n_clusters=None):
+def estimate_partitioned_models(x, y, n_clusters=None, model_params=None):
     """x is partitioned into n_clusters using kmeans (if k_means=None n_clusters is estimated
     based on the len(x). For each cluster we fit a model using the stats model selection method.
     """
@@ -176,7 +176,7 @@ def estimate_partitioned_models(x, y, n_clusters=None):
     X_, Y_, _ = partition_data(x, y, n_clusters)
 
     # For each partition we compute a model
-    models = fit_partitions(X_, Y_)
+    models = fit_partitions(X_, Y_, model_params)
 
     # We compute the residuals
     residuals = stats.compute_residuals(X_, Y_, models)
@@ -184,7 +184,7 @@ def estimate_partitioned_models(x, y, n_clusters=None):
     return residuals, X_, Y_, models
 
 
-def estimate_effect(x, y, n_clusters=None, bins=None, min_cluster_rule=False, metric_name='l1'):
+def estimate_effect(x, y, n_clusters=None, bins=None, min_cluster_rule=False, metric_name='l1', return_scores=False):
     """Estimates the causal effect: Returns 1 if X -> Y and 0 if Y -> X"""
 
     if min_cluster_rule:
@@ -200,5 +200,9 @@ def estimate_effect(x, y, n_clusters=None, bins=None, min_cluster_rule=False, me
     residualsr, _, _, _ = estimate_partitioned_models(y, x, n_clusters)
     scorer, _ = find_max_discrp(residualsr, bins, metric_name)
 
-    return score < scorer
+    direction = score < scorer
 
+    if return_scores:
+        return score, scorer, direction
+
+    return direction

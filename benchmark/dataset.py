@@ -44,6 +44,9 @@ class TuebDataset(Dataset):
     def get_name(self, idx):
         return self.meta_data[idx]['pair_number']
 
+    def total_direct_cause(self):
+        return len([single_data for single_data in self.meta_data if single_data['causality'] == 1])
+
 class SynthDataset(Dataset):
 
     def __init__(self, db_name):

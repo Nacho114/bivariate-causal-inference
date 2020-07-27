@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 import statsmodels.api as sm
 
+import neuralnet
+
 ###################################
 # Auxiliary functions
 ###################################
@@ -22,12 +24,23 @@ def get_pairs(val):
 
     return pairs
 
-def normalize(v):
-    v = v - np.mean(v)
-    norm = np.linalg.norm(v)
-    if norm == 0: 
+def normalize(v, mean=None, var=None):
+
+    if not mean:
+        mean = np.mean(v)
+    if not var:
+        var = np.linalg.norm(v)
+
+    v = v - mean
+    if var == 0: 
        return v
-    return v / norm
+    return v / var
+
+def denormalise(v, mean, var):
+    return var*mean + mean
+
+def get_moments(v):
+    return np.mean(v), np.linalg.norm(v)
 
 
 ###################################
@@ -87,9 +100,36 @@ def compute_residuals(X_, Y_, models, norm=False):
     residuals = []
 
     for i in range(len(X_)):
-        r = Y_[i] - models[i].predict(X_[i])
+        y_pred = models[i].predict(X_[i])
+        r = Y_[i] - y_pred
         if norm:
             r = normalize(r)
         residuals.append(r)
 
     return residuals
+
+
+##
+
+def get_model(x, y, model_params=None):
+
+    if not model_params:
+        model_type = 'PolyRegreg'
+    else:
+        model_type = model_params['model_type']
+
+
+    model = None
+
+    if model_type == 'PolyRegreg':
+        model = model_selection(x, y)
+
+    elif model_type == 'NeuralNet':
+        model = neuralnet.Net(model_params)
+        model.train(x, y)
+
+    else:
+        raise NameError('Unkown model:', model_type)
+
+    return model
+
