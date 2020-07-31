@@ -36,8 +36,13 @@ def normalize(v, mean=None, var=None):
        return v
     return v / var
 
-def denormalise(v, mean, var):
-    return var*mean + mean
+def denormalise(v, mean=None, var=None):
+    if not mean:
+        mean = np.mean(v)
+    if not var:
+        var = np.linalg.norm(v)
+
+    return var*v + mean
 
 def get_moments(v):
     return np.mean(v), np.linalg.norm(v)
@@ -125,8 +130,7 @@ def get_model(x, y, model_params=None):
         model = model_selection(x, y)
 
     elif model_type == 'NeuralNet':
-        model = neuralnet.Net(model_params)
-        model.train(x, y)
+        model = neuralnet.net_model_selection(x, y, model_params)
 
     else:
         raise NameError('Unkown model:', model_type)

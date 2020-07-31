@@ -30,9 +30,9 @@ def get_sigma(x, y, sigma=.5):
 
 ### Quadratic-time MMD with Gaussian RBF kernel
 # Biased version
-def rbf_mmd2(x, y, sigma=None):
+def rbf_mmd2(x, y, sigma=None, biased=True):
     sigma = get_sigma(x, y, sigma)
-    gamma = 1 / (2 * sigma**2)
+    gamma = 1 /  sigma**2
     
     XX = x.dot(x.T)
     XY = x.dot(y.T)
@@ -47,8 +47,20 @@ def rbf_mmd2(x, y, sigma=None):
             -2 * XX + X_sqnorms[:, np.newaxis] + X_sqnorms[np.newaxis, :]))
     K_YY = np.exp(-gamma * (
             -2 * YY + Y_sqnorms[:, np.newaxis] + Y_sqnorms[np.newaxis, :]))
-    
-    return K_XX.mean() - 2*K_XY.mean() + K_YY.mean()
+
+    if biased:
+        mmd1 = K_XX.mean() - 2*K_XY.mean() + K_YY.mean()
+        return mmd1
+
+    else:
+        m = K_XX.shape[0]
+        n = K_YY.shape[0]
+
+        mmd2 = ((K_XX.sum() - m) / (m * (m - 1))
+              + (K_YY.sum() - n) / (n * (n - 1))
+              - 2 * K_XY.mean())
+
+        return mmd2
 
 
 ### Linear-time MMD with Gaussian RBF kernel

@@ -1,4 +1,6 @@
 import torch
+from sklearn.metrics import r2_score
+
 import stats
 
 # Wrapper
@@ -26,9 +28,9 @@ class Net:
         self.norm = params['norm']
         self.learning_rate = params['learning_rate']
         self.epochs = params['epochs']
-        H = params['H']
-        self.model = get_model(H=H)
+        self.model = get_model(H=params['H'])
         self.loss_fn = get_loss()
+
 
     def train(self, x, y):
         x_tensor = self.transform(x, norm=self.norm)
@@ -36,12 +38,12 @@ class Net:
         train_model(x_tensor, y_tensor, self.model, self.loss_fn, self.epochs, self.learning_rate)
 
     def predict(self, x):
-        x = self.transform(x) 
+        x = self.transform(x, norm=self.norm) 
         y_pred = self.model(x)
 
         return to_numpy(y_pred).squeeze()
 
-    def transform(self, x, norm=True):
+    def transform(self, x, norm=False):
         if norm:
             x = stats.normalize(x)
 
@@ -60,6 +62,29 @@ def to_numpy(x_tensor):
     return x_tensor.detach().numpy()
 
 # general
+
+def net_model_selection(x, y, model_params):
+
+    lr_values = model_params['learning_rate']
+
+    if not isinstance(lr_values, list):
+        lr_values = [lr_values]
+
+    top_model = None
+    top_r2 = float("-inf")
+
+    for lr in lr_values:
+        model_params['learning_rate'] = lr
+        model = Net(model_params)
+        model.train(x, y)
+        r2 = r2_score(y, model.predict(x))
+
+        if abs(top_r2 - 1) > abs(r2 - 1):
+            top_r2 = r2
+            top_model = model
+
+    return top_model
+
 
 def get_model(H=100, D_in=1, D_out=1):
 

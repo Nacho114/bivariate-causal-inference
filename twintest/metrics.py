@@ -11,11 +11,11 @@ def l1_score(res_i, res_j, bins, bounds):
 
     return score
 
-def mmd_score(res_i, res_j, sigma):
+def mmd_score(res_i, res_j, sigma, biased=True):
 
     res_i = res_i.reshape(-1, 1)
     res_j = res_j.reshape(-1, 1)
-    return mmd.rbf_mmd2(res_i, res_j, sigma)
+    return mmd.rbf_mmd2(res_i, res_j, sigma, biased)
 
 
 def get_score(residuals, pair, bins=None, bounds=None, metric_name='l1'):
@@ -31,7 +31,13 @@ def get_score(residuals, pair, bins=None, bounds=None, metric_name='l1'):
     elif metric_name == 'mmd_median_heuristic':
         return mmd_score(res_i, res_j, sigma=None)
 
-    raise NameError('Unkown metric name: ' + metric_name)
+    elif metric_name == 'mmd_unbiased':
+        return mmd_score(res_i, res_j, sigma=.5, biased=False)
+
+    elif metric_name == 'mmd_median_heuristic_unbiased':
+        return mmd_score(res_i, res_j, sigma=None, biased=False)
+
+    raise NameError('Unknown metric name: ' + metric_name)
 
 
 def unwrap_score_info(score_info):
